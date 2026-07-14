@@ -1,9 +1,7 @@
-{% import 'components/csrf_field.html' as csrf %}
-
 <div class="modal fade" id="capacityModal" tabindex="-1">
     <div class="modal-dialog">
         <form action="{{ url_for('admin.update_hospital_capacities') }}" method="POST" class="modal-content">
-            {{ csrf.csrf_field() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="modal-header bg-primary text-white"><h5>Bed Configuration</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
                 <div class="mb-3"><label class="form-label fw-bold">ER Beds Limit</label><input type="number" name="total_er_beds" class="form-control" min="0" max="10000" required></div>

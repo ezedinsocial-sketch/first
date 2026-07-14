@@ -6,22 +6,48 @@
     <h2 class="text-primary fw-bold">Patient Dashboard</h2>
     {% if current_user.role == 'admin' %}
     <div>
-        <a href="{{ url_for('patients.export_excel', start_date=start_date, end_date=end_date) }}" class="btn btn-success btn-sm">
-            Export Report
-        </a>
+        <a href="{{ url_for('patients.export_excel', start_date=start_date, end_date=end_date) }}" class="btn btn-success btn-sm">Export Report</a>
     </div>
     {% endif %}
 </div>
 
-<!-- Capacity Cards -->
-{% include 'dashboard/capacity_cards.html' %}
-
-<!-- Date Filter -->
-{% include 'dashboard/date_filter.html' %}
-
-<!-- Biopsy Alerts -->
-{% include 'dashboard/biopsy_section.html' %}
-
-<!-- Patient Tabs -->
-{% include 'dashboard/patient_tabs.html' %}
+<div class="row">
+    <div class="col-md-2">
+        <div class="card-counter bg-icu shadow-sm">
+            <h6>ICU Beds Available</h6>
+            <h3>{{ totals.icu_avail }} / {{ totals.icu_max }}</h3>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card-counter bg-ward shadow-sm">
+            <h6>Ward Beds Available</h6>
+            <h3>{{ totals.ward_avail }} / {{ totals.ward_max }}</h3>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card-counter bg-er shadow-sm">
+            <h6>ER Beds Available</h6>
+            <h3>{{ totals.er_avail }} / {{ totals.er_max }}</h3>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card-counter bg-daycare shadow-sm">
+            <h6>Day Care Beds Available</h6>
+            <h3>{{ totals.daycare_avail }} / {{ totals.daycare_max }}</h3>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <a href="javascript:void(0);" onclick="switchToFollowUpTab()" class="card-counter bg-alerts shadow-sm">
+            <h6>Pending Follow-Ups</h6>
+            <h3>{{ totals.alert_2w_cnt }} / {{ totals.alert_4w_cnt }}</h3>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <div class="card-counter bg-analytics shadow-sm">
+            <h6>Analytics Logs</h6>
+            <div style="font-size: 0.75rem;">SSI Rate: <strong>{{ totals.ssi_rate }}%</strong></div>
+            <div style="font-size: 0.75rem;">LOS ICU/Ward: <strong>{{ totals.avg_los_icu }}/{{ totals.avg_los_ward }} D</strong></div>
+        </div>
+    </div>
+</div>
 {% endblock %}
