@@ -1,0 +1,28 @@
+<ul class="nav nav-tabs border-bottom-0" id="dashboardTabs" role="tablist">
+    <li class="nav-item"><button class="nav-link active fw-bold" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" type="button">Active Patients ({{ active_in_patients|length }})</button></li>
+    <li class="nav-item"><button class="nav-link fw-bold" id="waiting-tab" data-bs-toggle="tab" data-bs-target="#waiting-pane" type="button">Waiting List ({{ waiting_list_patients|length }})</button></li>
+    <li class="nav-item"><button class="nav-link fw-bold" id="followups-tab" data-bs-toggle="tab" data-bs-target="#followups-pane" type="button">Pending Follow-Up Tracker</button></li>
+    <li class="nav-item"><button class="nav-link fw-bold" id="tracked-tab" data-bs-toggle="tab" data-bs-target="#tracked-pane" type="button">Out-Patients & Archives</button></li>
+</ul>
+
+<div class="tab-content border p-3 bg-white shadow-sm rounded-bottom" id="dashboardTabsContent">
+    <!-- Active Patients Tab -->
+    <div class="tab-pane fade show active" id="active-pane">
+        {% include 'dashboard/tabs/active_patients.html' %}
+    </div>
+
+    <!-- Waiting List Tab -->
+    <div class="tab-pane fade" id="waiting-pane">
+        {% include 'dashboard/tabs/waiting_patients.html' %}
+    </div>
+
+    <!-- Follow-ups Tab -->
+    <div class="tab-pane fade" id="followups-pane">
+        {% include 'dashboard/tabs/followups.html' %}
+    </div>
+
+    <!-- Tracked Patients Tab -->
+    <div class="tab-pane fade" id="tracked-pane">
+        {% include 'dashboard/tabs/tracked_patients.html' %}
+    </div>
+</div>

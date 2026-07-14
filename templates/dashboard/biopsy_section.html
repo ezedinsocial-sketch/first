@@ -1,0 +1,61 @@
+<div class="row my-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-light fw-bold text-dark border-bottom">Biopsy Alerts ({{ totals.biopsy_alerts }})</div>
+            <div class="card-body p-0" style="max-height: 220px; overflow-y:auto;">
+                <table class="table table-striped table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Chart Number</th>
+                            <th>Patient Name</th>
+                            <th>Due Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in biopsy_alert_list %}
+                        <tr {% if p.biopsy_overdue == 'Yes' %}class="table-danger"{% endif %}>
+                            <td><a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}">{{ p.chart_number }}</a></td>
+                            <td>{{ p.full_name }}</td>
+                            <td>{{ p.biopsy_appointment_date }}</td>
+                            <td>
+                                <button onclick="populateBiopsyModal('{{ p.chart_number }}', '{{ p.biopsy_status }}')" class="btn btn-xs btn-outline-dark py-0" data-bs-toggle="modal" data-bs-target="#biopsyUpdateModal">Update</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-light fw-bold text-dark border-bottom">Delayed Biopsies ({{ totals.biopsy_delayed_cnt }})</div>
+            <div class="card-body p-0" style="max-height: 220px; overflow-y:auto;">
+                <table class="table table-striped table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Chart Number</th>
+                            <th>Patient Name</th>
+                            <th>Delay Reason</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in biopsy_delayed_list %}
+                        <tr>
+                            <td><a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}">{{ p.chart_number }}</a></td>
+                            <td>{{ p.full_name }}</td>
+                            <td><span class="text-danger small">{{ p.biopsy_delay_reason }}</span></td>
+                            <td>
+                                <button onclick="populateBiopsyModal('{{ p.chart_number }}', '{{ p.biopsy_status }}')" class="btn btn-xs btn-outline-dark py-0" data-bs-toggle="modal" data-bs-target="#biopsyUpdateModal">Update</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

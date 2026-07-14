@@ -1,0 +1,18 @@
+{% import 'components/csrf_field.html' as csrf %}
+
+{% if current_user %}
+    <a href="{{ url_for('patients.dashboard') }}" class="active">Dashboard</a>
+    <a href="#admissionModal" data-bs-toggle="modal">New Admission</a>
+    <a href="{{ url_for('auth.change_own_password') }}">My Password</a>
+    {% if current_user.role == 'admin' %}
+    <a href="{{ url_for('admin.manage_users') }}">Staff Accounts</a>
+    <a href="#capacityModal" data-bs-toggle="modal">Bed Configurations</a>
+    {% endif %}
+    <div class="px-3 mt-4 small text-muted">User: <br><strong class="text-dark">{{ current_user.username }}</strong> ({{ current_user.role }})</div>
+    <form action="{{ url_for('auth.logout') }}" method="POST" class="mt-5">
+        {{ csrf.csrf_field() }}
+        <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 ms-3">Logout</button>
+    </form>
+{% else %}
+    <a href="#" class="active">Login</a>
+{% endif %}

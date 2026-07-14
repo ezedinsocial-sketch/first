@@ -1,0 +1,32 @@
+<table class="table table-hover table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Chart Number</th>
+            <th>Patient Name</th>
+            <th>Status</th>
+            <th>Discharge Date</th>
+            <th>Discharge Status</th>
+            <th>Risk Marker</th>
+            <th>Archive Lock</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in tracked_out_patients %}
+        <tr>
+            <td><a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}" class="fw-bold">{{ p.chart_number }}</a></td>
+            <td>{{ p.full_name }}</td>
+            <td><span class="badge bg-secondary">{{ p.status }}</span></td>
+            <td>{{ p.date_discharge or 'N/A' }}</td>
+            <td><strong>{{ p.discharge_status or 'N/A' }}</strong></td>
+            <td>
+                {% if p.high_risk_ssi == 1 %}
+                    <span class="badge bg-danger">🚨 HIGH RISK SSI</span>
+                {% else %}
+                    <span class="text-muted small">Standard Risk</span>
+                {% endif %}
+            </td>
+            <td>{{ '🔒 Locked' if p.file_locked == 1 else '🔓 Open' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

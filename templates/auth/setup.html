@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Create Admin Account - Yanet Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white text-center py-3"><h5>Create Admin Account</h5></div>
+            <div class="card-body p-4">
+                {% import 'components/csrf_field.html' as csrf %}
+                <form action="{{ url_for('auth.setup') }}" method="POST">
+                    {{ csrf.csrf_field() }}
+                    <div class="mb-3">
+                        <label class="form-label">Admin Username</label>
+                        <input type="text" name="username" class="form-control" autocomplete="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" autocomplete="new-password" minlength="12" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" name="password_confirmation" class="form-control" autocomplete="new-password" minlength="12" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

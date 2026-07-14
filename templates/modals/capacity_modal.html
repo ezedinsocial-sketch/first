@@ -1,0 +1,17 @@
+{% import 'components/csrf_field.html' as csrf %}
+
+<div class="modal fade" id="capacityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('admin.update_hospital_capacities') }}" method="POST" class="modal-content">
+            {{ csrf.csrf_field() }}
+            <div class="modal-header bg-primary text-white"><h5>Bed Configuration</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="form-label fw-bold">ER Beds Limit</label><input type="number" name="total_er_beds" class="form-control" min="0" max="10000" required></div>
+                <div class="mb-3"><label class="form-label fw-bold">ICU Beds Limit</label><input type="number" name="total_icu_beds" class="form-control" min="0" max="10000" required></div>
+                <div class="mb-3"><label class="form-label fw-bold">Ward Beds Capacity</label><input type="number" name="total_ward_beds" class="form-control" min="0" max="10000" required></div>
+                <div class="mb-3"><label class="form-label fw-bold">Day Care Surgery Unit Beds Capacity</label><input type="number" name="total_daycare_beds" class="form-control" min="0" max="10000" required></div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary">Save Changes</button></div>
+        </form>
+    </div>
+</div>

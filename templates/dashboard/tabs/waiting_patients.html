@@ -1,0 +1,27 @@
+<table class="table table-hover table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Chart Number</th>
+            <th>Patient Name</th>
+            <th>Phone</th>
+            <th>Surgeon</th>
+            <th>Diagnosis</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in waiting_list_patients %}
+        <tr>
+            <td><a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}" class="fw-bold">{{ p.chart_number }}</a></td>
+            <td>{{ p.full_name }}</td>
+            <td>{{ p.phone }}</td>
+            <td>{{ p.surgeon_name }}</td>
+            <td>{{ p.diagnosis }}</td>
+            <td>
+                <button onclick="triggerWaitingAllocationModal('{{ p.chart_number }}', '{{ p.full_name }}')" class="btn btn-sm btn-success py-0" data-bs-toggle="modal" data-bs-target="#allocationAdmissionModal">Allocate</button>
+                <button onclick="triggerWaitingLeaveModal('{{ p.chart_number }}')" class="btn btn-sm btn-outline-danger py-0" data-bs-toggle="modal" data-bs-target="#waitingLeaveModal">Leave List</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -1,0 +1,28 @@
+<table class="table table-hover table-bordered table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Chart Number</th>
+            <th>Patient Name</th>
+            <th>Unit</th>
+            <th>Admission Date</th>
+            <th>Surgeon</th>
+            <th>Stay Duration</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in active_in_patients %}
+        <tr>
+            <td><a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}" class="fw-bold text-decoration-none">{{ p.chart_number }}</a></td>
+            <td>{{ p.full_name }}</td>
+            <td><span class="badge bg-secondary">{{ p.disposition_unit }}</span></td>
+            <td>{{ p.date_admission }}</td>
+            <td>{{ p.surgeon_name }}</td>
+            <td>{{ p.length_of_stay }} Days</td>
+            <td>
+                <button onclick="launchDischargeModal('{{ p.chart_number }}')" class="btn btn-sm btn-outline-danger py-0" data-bs-toggle="modal" data-bs-target="#dischargeModal">Discharge</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

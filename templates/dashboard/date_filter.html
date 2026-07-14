@@ -1,0 +1,18 @@
+<div class="card my-3 shadow-sm border-0">
+    <div class="card-body bg-white rounded">
+        <form method="GET" action="{{ url_for('patients.dashboard') }}" class="row g-3 align-items-center">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Discharge Start Date</label>
+                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Discharge End Date</label>
+                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date }}">
+            </div>
+            <div class="col-md-4 align-self-end">
+                <button type="submit" class="btn btn-sm btn-primary px-3">Filter Dates</button>
+                <a href="{{ url_for('patients.dashboard') }}" class="btn btn-sm btn-secondary px-3">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>

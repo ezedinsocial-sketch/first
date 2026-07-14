@@ -1,0 +1,61 @@
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="bg-light p-2 border rounded fw-bold text-dark mb-2">2-Week Follow-Up Queue</div>
+        <div style="max-height: 200px; overflow-y:auto;" class="border rounded bg-white">
+            <ul class="list-group list-group-flush">
+                {% for p in alert_2w_list + retry_2w_list %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ p.full_name }} ({{ p.chart_number }})</span>
+                        <a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}" class="btn btn-xs btn-primary py-0 px-2">Open Record</a>
+                    </li>
+                {% else %}
+                    <li class="text-muted p-2 small italic">No active profiles inside 2-week follow-up list.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="bg-light p-2 border rounded fw-bold text-danger mt-3 mb-2">2-Week Missed / Retries</div>
+        <div style="max-height: 150px; overflow-y:auto;" class="border rounded bg-white">
+            <ul class="list-group list-group-flush">
+                {% for p in missed_2w_list %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ p.full_name }} ({{ p.chart_number }}) - Retry: <code>{{ p.call_2w_retry_date }}</code></span>
+                        <a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}" class="btn btn-xs btn-outline-danger py-0 px-2">Attempt Call</a>
+                    </li>
+                {% else %}
+                    <li class="text-muted p-2 small italic">No records found.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="bg-light p-2 border rounded fw-bold text-dark mb-2">4-Week Follow-Up Queue</div>
+        <div style="max-height: 200px; overflow-y:auto;" class="border rounded bg-white">
+            <ul class="list-group list-group-flush">
+                {% for p in alert_4w_list + retry_4w_list %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ p.full_name }} ({{ p.chart_number }})</span>
+                        <a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}" class="btn btn-xs btn-primary py-0 px-2">Open Record</a>
+                    </li>
+                {% else %}
+                    <li class="text-muted p-2 small italic">No active profiles inside 4-week follow-up list.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="bg-light p-2 border rounded fw-bold text-danger mt-3 mb-2">4-Week Missed / Retries</div>
+        <div style="max-height: 150px; overflow-y:auto;" class="border rounded bg-white">
+            <ul class="list-group list-group-flush">
+                {% for p in missed_4w_list %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ p.full_name }} ({{ p.chart_number }}) - Retry: <code>{{ p.call_4w_retry_date }}</code></span>
+                        <a href="{{ url_for('patients.patient_profile', chart_number=p.chart_number) }}" class="btn btn-xs btn-outline-danger py-0 px-2">Attempt Call</a>
+                    </li>
+                {% else %}
+                    <li class="text-muted p-2 small italic">No records found.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>

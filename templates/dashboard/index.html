@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Yanet Portal{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-primary fw-bold">Patient Dashboard</h2>
+    {% if current_user.role == 'admin' %}
+    <div>
+        <a href="{{ url_for('patients.export_excel', start_date=start_date, end_date=end_date) }}" class="btn btn-success btn-sm">
+            Export Report
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Capacity Cards -->
+{% include 'dashboard/capacity_cards.html' %}
+
+<!-- Date Filter -->
+{% include 'dashboard/date_filter.html' %}
+
+<!-- Biopsy Alerts -->
+{% include 'dashboard/biopsy_section.html' %}
+
+<!-- Patient Tabs -->
+{% include 'dashboard/patient_tabs.html' %}
+{% endblock %}
