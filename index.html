@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Yanet Trauma and Surgical Center Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Transformed aesthetic architecture using custom light blue tones */
+        body { background-color: #f0f4f8; font-family: system-ui, -apple-system, sans-serif; }
+        .sidebar { min-height: 100vh; background-color: #e3f2fd; color: #0d47a1; padding-top: 20px; border-right: 1px solid #bbdefb; }
+        .sidebar h4 { color: #0d47a1 !important; }
+        .sidebar a { color: #1565c0; text-decoration: none; display: block; padding: 10px 20px; font-weight: 500; border-radius: 4px; margin: 2px 10px; }
+        .sidebar a:hover, .sidebar a.active { background-color: #b3e5fc; color: #01579b; }
+        .card-counter { padding: 18px; border-radius: 6px; color: #01579b; margin-bottom: 20px; text-decoration: none; display: block; border: 1px solid rgba(0,0,0,0.05); }
+        .card-counter h6 { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; opacity: 0.8; }
+        .card-counter:hover { opacity: 0.95; transform: translateY(-1px); }
+        
+        .bg-icu { background-color: #e1f5fe; }
+        .bg-ward { background-color: #e3f2fd; }
+        .bg-er { background-color: #ffe0b2; color: #e65100; }
+        .bg-daycare { background-color: #e8f5e9; color: #1b5e20; }
+        .bg-alerts { background-color: #fff3e0; color: #e65100; }
+        .bg-analytics { background-color: #eceff1; color: #37474f; }
+        
+        .btn-primary { background-color: #0288d1; border-color: #0288d1; }
+        .btn-primary:hover { background-color: #01579b; border-color: #01579b; }
+        .text-danger { color: #d32f2f !important; }
+        .bg-danger { background-color: #ffebee !important; color: #c62828 !important; }
+        .table-light { --bs-table-bg: #f5f5f5; }
+        
+        .form-check-input-danger:checked {
+            background-color: #d32f2f;
+            border-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+{% macro csrf_field() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+<div class="container-fluid">
+    <div class="row">
+        
+        <div class="col-md-2 sidebar d-none d-md-block">
+            <h4 class="text-center mb-4 fw-bold">Yanet Portal</h4>
+            {% if current_user %}
+                <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+                <a href="#admissionModal" data-bs-toggle="modal">New Admission</a>
+                <a href="{{ url_for('change_own_password') }}">My Password</a>
+                {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('manage_users') }}">Staff Accounts</a>
+                <a href="#capacityModal" data-bs-toggle="modal">Bed Configurations</a>
+                {% endif %}
+                <div class="px-3 mt-4 small text-muted">User: <br><strong class="text-dark">{{ current_user.username }}</strong> ({{ current_user.role }})</div>
+                <form action="{{ url_for('logout') }}" method="POST" class="mt-5">
+                    {{ csrf_field() }}
+                    <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 ms-3">Logout</button>
+                </form>
+            {% else %}
+                <a href="#" class="active">Login</a>
+            {% endif %}
+        </div>
+
+        <div class="col-md-10 p-4">
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ msg }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if view == 'login' %}
+            <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-primary text-white text-center py-3"><h5>System Login</h5></div>
+                        <div class="card-body p-4">
+                            <form action="{{ url_for('login') }}" method="POST">
+                                {{ csrf_field() }}
+                                <div class="mb-3">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" name="username" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" name="password" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 py-2">Sign In</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% elif view == 'setup' %}
+            <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+                <div class="col-md-5">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-primary text-white text-center py-3"><h5>Create Admin Account</h5></div>
+                        <div class="card-body p-4">
+                            <form action="{{ url_for('setup') }}" method="POST">
+                                {{ csrf_field() }}
+                                <div class="mb-3"><label class="form-label">Admin Username</label><input type="text" name="username" class="form-control" autocomplete="username" required></div>
+                                <div class="mb-3"><label class="form-label">Password</label><input type="password" name="password" class="form-control" autocomplete="new-password" minlength="12" required><div class="form-text">Min 12 characters.</div></div>
+                                <div class="mb-3"><label class="form-label">Confirm Password</label><input type="password" name="password_confirmation" class="form-control" autocomplete="new-password" minlength="12" required></div>
+                                <button type="submit" class="btn btn-primary w-100 py-2">Create Account</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% elif view == 'dashboard' %}
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary fw-bold">Patient Dashboard</h2>
+                {% if current_user.role == 'admin' %}
+                <div>
+                    <a href="{{ url_for('export_excel', start_date=start_date, end_date=end_date) }}" class="btn btn-success btn-sm">
+                        Export Report
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="card-counter bg-icu shadow-sm">
+                        <h6>ICU Beds Available</h6>
+                        <h3>{{ totals.icu_avail }} / {{ totals.icu_max }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card-counter bg-ward shadow-sm">
+                        <h6>Ward Beds Available</h6>
+                        <h3>{{ totals.ward_avail }} / {{ totals.ward_max }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card-counter bg-er shadow-sm">
+                        <h6>ER Beds Available</h6>
+                        <h3>{{ totals.er_avail }} / {{ totals.er_max }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card-counter bg-daycare shadow-sm">
+                        <h6>Day Care Beds Available</h6>
+                        <h3>{{ totals.daycare_avail }} / {{ totals.daycare_max }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <a href="javascript:void(0);" onclick="switchToFollowUpTab()" class="card-counter bg-alerts shadow-sm">
+                        <h6>Pending Follow-Ups</h6>
+                        <h3>{{ totals.alert_2w_cnt }} / {{ totals.alert_4w_cnt }}</h3>
+                    </a>
+                </div>
+                <div class="col-md-2">
+                    <div class="card-counter bg-analytics shadow-sm">
+                        <h6>Analytics Logs</h6>
+                        <div style="font-size: 0.75rem;">SSI Rate: <strong>{{ totals.ssi_rate }}%</strong></div>
+                        <div style="font-size: 0.75rem;">LOS ICU/Ward: <strong>{{ totals.avg_los_icu }}/{{ totals.avg_los_ward }} D</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card my-3 shadow-sm border-0">
+                <div class="card-body bg-white rounded">
+                    <form method="GET" action="{{ url_for('dashboard') }}" class="row g-3 align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Discharge Start Date</label>
+                            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">Discharge End Date</label>
+                            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-4 align-self-end">
+                            <button type="submit" class="btn btn-sm btn-primary px-3">Filter Dates</button>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary px-3">Clear</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row my-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-light fw-bold text-dark border-bottom">Biopsy Alerts ({{ totals.biopsy_alerts }})</div>
+                        <div class="card-body p-0" style="max-height: 220px; overflow-y:auto;">
+                            <table class="table table-striped table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Chart Number</th>
+                                        <th>Patient Name</th>
+                                        <th>Due Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in biopsy_alert_list %}
+                                    <tr {% if p.biopsy_overdue == 'Yes' %}class="table-danger"{% endif %}>
+                                        <td><a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}">{{ p.chart_number }}</a></td>
+                                        <td>{{ p.full_name }}</td>
+                                        <td>{{ p.biopsy_appointment_date }}</td>
+                                        <td>
+                                            <button onclick="populateBiopsyModal('{{ p.chart_number }}', '{{ p.biopsy_status }}')" class="btn btn-xs btn-outline-dark py-0" data-bs-toggle="modal" data-bs-target="#biopsyUpdateModal">Update</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-light fw-bold text-dark border-bottom">Delayed Biopsies ({{ totals.biopsy_delayed_cnt }})</div>
+                        <div class="card-body p-0" style="max-height: 220px; overflow-y:auto;">
+                            <table class="table table-striped table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Chart Number</th>
+                                        <th>Patient Name</th>
+                                        <th>Delay Reason</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in biopsy_delayed_list %}
+                                    <tr>
+                                        <td><a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}">{{ p.chart_number }}</a></td>
+                                        <td>{{ p.full_name }}</td>
+                                        <td><span class="text-danger small">{{ p.biopsy_delay_reason }}</span></td>
+                                        <td>
+                                            <button onclick="populateBiopsyModal('{{ p.chart_number }}', '{{ p.biopsy_status }}')" class="btn btn-xs btn-outline-dark py-0" data-bs-toggle="modal" data-bs-target="#biopsyUpdateModal">Re-evaluate</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs border-bottom-0" id="dashboardTabs" role="tablist">
+                <li class="nav-item"><button class="nav-link active fw-bold" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-pane" type="button">Active Patients ({{ active_in_patients|length }})</button></li>
+                <li class="nav-item"><button class="nav-link fw-bold" id="waiting-tab" data-bs-toggle="tab" data-bs-target="#waiting-pane" type="button">Waiting List ({{ waiting_list_patients|length }})</button></li>
+                <li class="nav-item"><button class="nav-link fw-bold" id="followups-tab" data-bs-toggle="tab" data-bs-target="#followups-pane" type="button">Pending Follow-Up Tracker</button></li>
+                <li class="nav-item"><button class="nav-link fw-bold" id="tracked-tab" data-bs-toggle="tab" data-bs-target="#tracked-pane" type="button">Out-Patients & Archives</button></li>
+            </ul>
+
+            <div class="tab-content border p-3 bg-white shadow-sm rounded-bottom" id="dashboardTabsContent">
+                
+                <div class="tab-pane fade show active" id="active-pane">
+                    <table class="table table-hover table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Chart Number</th>
+                                <th>Patient Name</th>
+                                <th>Unit</th>
+                                <th>Admission Date</th>
+                                <th>Sursurgeon</th>
+                                <th>Stay Duration</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in active_in_patients %}
+                            <tr>
+                                <td><a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}" class="fw-bold text-decoration-none">{{ p.chart_number }}</a></td>
+                                <td>{{ p.full_name }}</td>
+                                <td><span class="badge bg-secondary">{{ p.disposition_unit }}</span></td>
+                                <td>{{ p.date_admission }}</td>
+                                <td>{{ p.surgeon_name }}</td>
+                                <td>{{ p.length_of_stay }} Days</td>
+                                <td>
+                                    <button onclick="launchDischargeModal('{{ p.chart_number }}')" class="btn btn-sm btn-outline-danger py-0" data-bs-toggle="modal" data-bs-target="#dischargeModal">Discharge</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="tab-pane fade" id="waiting-pane">
+                    <table class="table table-hover table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Chart Number</th>
+                                <th>Patient Name</th>
+                                <th>Phone</th>
+                                <th>Surgeon</th>
+                                <th>Diagnosis</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in waiting_list_patients %}
+                            <tr>
+                                <td><a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}" class="fw-bold">{{ p.chart_number }}</a></td>
+                                <td>{{ p.full_name }}</td>
+                                <td>{{ p.phone }}</td>
+                                <td>{{ p.surgeon_name }}</td>
+                                <td>{{ p.diagnosis }}</td>
+                                <td>
+                                    <button onclick="triggerWaitingAllocationModal('{{ p.chart_number }}', '{{ p.full_name }}')" class="btn btn-sm btn-success py-0" data-bs-toggle="modal" data-bs-target="#allocationAdmissionModal">Admit Patient</button>
+                                    <button onclick="triggerWaitingLeaveModal('{{ p.chart_number }}')" class="btn btn-sm btn-outline-danger py-0" data-bs-toggle="modal" data-bs-target="#waitingLeaveModal">Remove</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="tab-pane fade" id="followups-pane">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="bg-light p-2 border rounded fw-bold text-dark mb-2">2-Week Follow-Up Queue</div>
+                            <div style="max-height: 200px; overflow-y:auto;" class="border rounded bg-white">
+                                <ul class="list-group list-group-flush">
+                                    {% for p in alert_2w_list + retry_2w_list %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>{{ p.full_name }} ({{ p.chart_number }})</span>
+                                            <a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}" class="btn btn-xs btn-primary py-0 px-2">Open Record</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="text-muted p-2 small italic">No active profiles inside 2-week follow-up list.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-light p-2 border rounded fw-bold text-danger mt-3 mb-2">2-Week Missed / Retries</div>
+                            <div style="max-height: 150px; overflow-y:auto;" class="border rounded bg-white">
+                                <ul class="list-group list-group-flush">
+                                    {% for p in missed_2w_list %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>{{ p.full_name }} ({{ p.chart_number }}) - Retry: <code>{{ p.call_2w_retry_date }}</code></span>
+                                            <a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}" class="btn btn-xs btn-outline-danger py-0 px-2">Attempt Call</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="text-muted p-2 small italic">No records found.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="bg-light p-2 border rounded fw-bold text-dark mb-2">4-Week Follow-Up Queue</div>
+                            <div style="max-height: 200px; overflow-y:auto;" class="border rounded bg-white">
+                                <ul class="list-group list-group-flush">
+                                    {% for p in alert_4w_list + retry_4w_list %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>{{ p.full_name }} ({{ p.chart_number }})</span>
+                                            <a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}" class="btn btn-xs btn-primary py-0 px-2">Open Record</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="text-muted p-2 small italic">No active profiles inside 4-week follow-up list.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-light p-2 border rounded fw-bold text-danger mt-3 mb-2">4-Week Missed / Retries</div>
+                            <div style="max-height: 150px; overflow-y:auto;" class="border rounded bg-white">
+                                <ul class="list-group list-group-flush">
+                                    {% for p in missed_4w_list %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>{{ p.full_name }} ({{ p.chart_number }}) - Retry: <code>{{ p.call_4w_retry_date }}</code></span>
+                                            <a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}" class="btn btn-xs btn-outline-danger py-0 px-2">Attempt Call</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="text-muted p-2 small italic">No records found.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tracked-pane">
+                    <table class="table table-hover table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Chart Number</th>
+                                <th>Patient Name</th>
+                                <th>Status</th>
+                                <th>Discharge Date</th>
+                                <th>Discharge Status</th>
+                                <th>Risk Marker</th>
+                                <th>Archive Lock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in tracked_out_patients %}
+                            <tr>
+                                <td><a href="{{ url_for('patient_profile', chart_number=p.chart_number) }}" class="fw-bold">{{ p.chart_number }}</a></td>
+                                <td>{{ p.full_name }}</td>
+                                <td><span class="badge bg-secondary">{{ p.status }}</span></td>
+                                <td>{{ p.date_discharge or 'N/A' }}</td>
+                                <td><strong>{{ p.discharge_status or 'N/A' }}</strong></td>
+                                <td>
+                                    {% if p.high_risk_ssi == 1 %}
+                                        <span class="badge bg-danger">🚨 HIGH RISK SSI</span>
+                                    {% else %}
+                                        <span class="text-muted small">Standard Risk</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ '🔒 Locked' if p.file_locked == 1 else '🔓 Open' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% elif view == 'account_password' %}
+            <div class="row justify-content-center mt-5">
+                <div class="col-md-5">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-primary text-white fw-bold">Change Password</div>
+                        <div class="card-body p-4">
+                            <form action="{{ url_for('change_own_password') }}" method="POST">
+                                {{ csrf_field() }}
+                                <div class="mb-3"><label class="form-label">Current Password</label><input type="password" name="current_password" class="form-control" autocomplete="current-password" required></div>
+                                <div class="mb-3"><label class="form-label">New Password</label><input type="password" name="new_password" class="form-control" autocomplete="new-password" minlength="12" required></div>
+                                <div class="mb-3"><label class="form-label">Confirm New Password</label><input type="password" name="password_confirmation" class="form-control" autocomplete="new-password" minlength="12" required></div>
+                                <div class="d-flex justify-content-between"><a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a><button type="submit" class="btn btn-primary">Update Password</button></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% elif view == 'users' %}
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div><h2 class="text-primary fw-bold mb-0">Staff Management</h2></div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">Return Dashboard</a>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-primary text-white fw-bold">Create Account</div>
+                        <div class="card-body p-4">
+                            <form action="{{ url_for('create_user') }}" method="POST">
+                                {{ csrf_field() }}
+                                <div class="mb-3"><label class="form-label">Username</label><input type="text" name="username" class="form-control" autocomplete="off" required></div>
+                                <div class="mb-3"><label class="form-label">Temporary Password</label><input type="password" name="password" class="form-control" autocomplete="new-password" minlength="12" required></div>
+                                <div class="mb-3"><label class="form-label">Confirm Temporary Password</label><input type="password" name="password_confirmation" class="form-control" autocomplete="new-password" minlength="12" required></div>
+                                <button type="submit" class="btn btn-primary w-100">Create Staff Account</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-light fw-bold">Accounts</div>
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+                                <tbody>
+                                {% for user in users %}
+                                    <tr>
+                                        <td>{{ user.username }}</td>
+                                        <td><span class="badge text-bg-secondary">{{ user.role }}</span></td>
+                                        <td><span class="badge text-bg-{{ 'success' if user.is_active else 'danger' }}">{{ 'Active' if user.is_active else 'Disabled' }}</span></td>
+                                        <td class="small">{{ user.last_login_at or 'Never' }}</td>
+                                        <td>
+                                        {% if user.role == 'staff' %}
+                                            <form action="{{ url_for('toggle_user_active', user_id=user.id) }}" method="POST" class="d-inline">
+                                                {{ csrf_field() }}
+                                                <button class="btn btn-sm btn-outline-{{ 'danger' if user.is_active else 'success' }}" type="submit">{{ 'Disable' if user.is_active else 'Enable' }}</button>
+                                            </form>
+                                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#reset-{{ user.id }}">Reset</button>
+                                            <div class="collapse mt-2" id="reset-{{ user.id }}">
+                                                <form action="{{ url_for('reset_user_password', user_id=user.id) }}" method="POST" class="border rounded p-2">
+                                                    {{ csrf_field() }}
+                                                    <input type="password" name="password" class="form-control form-control-sm mb-2" placeholder="New Password" minlength="12" required>
+                                                    <input type="password" name="password_confirmation" class="form-control form-control-sm mb-2" placeholder="Confirm Password" minlength="12" required>
+                                                    <button class="btn btn-sm btn-primary" type="submit">Save</button>
+                                                </form>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted small">Primary Admin</span>
+                                        {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elif view == 'profile' %}
+            <div class="mb-3">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">&larr; Return Dashboard</a>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">Clinical Record: {{ p.full_name }} (Chart #{{ p.chart_number }})</h5>
+                    {% if p.file_locked == 1 and current_user.role == 'admin' %}
+                        <form action="{{ url_for('unlock_profile', chart_number=p.chart_number) }}" method="POST" class="m-0">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-xs btn-warning fw-bold py-1">Unlock File</button>
+                        </form>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    
+                    {% if p.high_risk_ssi == 1 or p.discharge_status == 'Death' %}
+                    <div class="mb-3 d-flex gap-2">
+                        {% if p.high_risk_ssi == 1 %}
+                            <div class="alert alert-danger py-2 px-3 fw-bold mb-0 shadow-sm flex-fill text-center">🚨 HIGH RISK SSI</div>
+                        {% endif %}
+                        {% if p.discharge_status == 'Death' %}
+                            <div class="alert alert-dark py-2 px-3 fw-bold mb-0 shadow-sm flex-fill text-center text-white bg-dark">PATIENT EXPIRED (DEATH)</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="row border-bottom pb-3 mb-3 bg-light p-2 rounded mx-0">
+                        <div class="col-md-3"><h6>Phone:</h6> <p class="text-muted fw-bold">{{ p.phone or 'N/A' }}</p></div>
+                        <div class="col-md-3"><h6>Gender:</h6> <p class="text-muted">{{ p.gender }}</p></div>
+                        <div class="col-md-3"><h6>Admission Type:</h6> <p class="text-muted">{{ p.admission_type }}</p></div>
+                        <div class="col-md-3"><h6>Discharge Status:</h6> <p class="text-danger fw-bold fs-5">{{ p.discharge_status or 'Admitted' }}</p></div>
+                    </div>
+
+                    <div class="card bg-light mb-4 border-info">
+                        <div class="card-header bg-info text-dark fw-bold">Room Allocation History</div>
+                        <div class="card-body">
+                            {% if p.status == 'Admitted' and p.file_locked == 0 %}
+                            <form action="{{ url_for('change_room') }}" method="POST" class="row g-3 align-items-center mb-3">
+                                {{ csrf_field() }}
+                                <input type="hidden" name="chart_number" value="{{ p.chart_number }}">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Transfer Location To:</label>
+                                    <select name="new_disposition_unit" class="form-select form-select-sm" required>
+                                        <option value="Ward">Ward</option>
+                                        <option value="ICU 1">ICU 1</option>
+                                        <option value="ICU 2">ICU 2</option>
+                                        <option value="ER">ER</option>
+                                        <option value="Day Care Surgery Unit">Day Care Surgery Unit</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Reallocation Date</label>
+                                    <input type="date" name="change_date" class="form-control form-control-sm" value="{{ today_str }}" required>
+                                </div>
+                                <div class="col-md-4 align-self-end">
+                                    <button type="submit" class="btn btn-sm btn-info w-100 fw-bold">Commit Transfer</button>
+                                </div>
+                            </form>
+                            {% endif %}
+                            
+                            <h6>Occupancy Logs:</h6>
+                            <ul class="mb-0">
+                                {% for t in transfers %}
+                                    <li>Room: <strong>{{ t.room_service }}</strong> | Frame: <code>[{{ t.start_date }} to {{ t.end_date or 'Present' }}]</code> &rarr; Duration: <strong>{{ t.days_spent }} Days</strong></li>
+                                {% else %}
+                                    <span class="text-muted small italic">No historical internal transfers recorded.</span>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if p.discharge_status != 'Death' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-warning mb-3 shadow-sm">
+                                <div class="card-header bg-warning text-dark fw-bold">2-Week Call Surveillance</div>
+                                <div class="card-body">
+                                    {% if p.file_locked == 0 and p.status == 'Discharged' %}
+                                    <form action="{{ url_for('log_pipeline_call') }}" method="POST">
+                                        {{ csrf_field() }}
+                                        <input type="hidden" name="chart_number" value="{{ p.chart_number }}">
+                                        <input type="hidden" name="call_type" value="2w">
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-bold">Reachable via Phone?</label>
+                                            <select name="reachable" id="reach2w" class="form-select form-select-sm" onchange="toggleReachabilityFields('2w')" required>
+                                                <option value="">-- Choose State --</option>
+                                                <option value="Yes">Yes, Reachable</option>
+                                                <option value="No">No, Unreachable</option>
+                                            </select>
+                                        </div>
+                                        <div id="form_2w_reachable" class="d-none border p-2 rounded bg-white my-2">
+                                            <div class="mb-2"><label class="small">General Status Evaluation 2W</label><input type="text" name="general_status_2w" class="form-control form-control-sm"></div>
+                                            <div class="mb-2"><label class="small">Deterioration Details</label><textarea name="deterioration_details" class="form-control form-control-sm" rows="1"></textarea></div>
+                                            <div class="mb-2"><label class="small">Hospital Care Rating (1-5)</label><input type="number" name="hospital_rating_2w" class="form-control form-control-sm" min="1" max="5"></div>
+                                            <div class="mb-2">
+                                                <label class="small">SSI Surveillance Markers</label>
+                                                <select name="ssi_surveillance_2w" class="form-select form-select-sm">
+                                                    <option value="No Sign of Infection">No Sign of Infection</option>
+                                                    <option value="Clinical Signs">Clinical Signs</option>
+                                                    <option value="Diagnosis by a Clinician">Diagnosis by a Clinician</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-2"><label class="small">Caller Officer Name</label><input type="text" name="caller_name_2w" class="form-control form-control-sm"></div>
+                                        </div>
+                                        <div id="form_2w_unreachable" class="d-none border p-2 rounded bg-light my-2">
+                                            <div class="mb-2">
+                                                <label class="small fw-bold text-danger">Cause For Failure</label>
+                                                <select name="unreachable_reason" id="reason2w" class="form-select form-select-sm" onchange="toggleOtherReason('2w')">
+                                                    <option value="Phone not working/Switched off">Phone not working/Switched off</option>
+                                                    <option value="Patient or attendant not available">Patient or attendant not available</option>
+                                                    <option value="Language barrier Structural issue">Language barrier Structural issue</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div id="other_2w_div" class="mb-2 d-none"><label class="small">Details</label><input type="text" name="unreachable_reason_other" class="form-control form-control-sm"></div>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-warning w-100 fw-bold">Save 2-Week Call</button>
+                                    </form>
+                                    {% endif %}
+                                    <div class="mt-2 p-2 bg-light rounded small">
+                                        <strong>State:</strong> {{ p.call_2w_state }} | Retry: <code>{{ p.call_2w_retry_date or 'None' }}</code><br>
+                                        Unreachable Reason: <span class="text-danger">{{ p.call_2w_unreachable_reason or 'None' }}</span><br>
+                                        SSI Marker 2W: <strong>{{ p.ssi_surveillance_2w }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card border-dark mb-3 shadow-sm">
+                                <div class="card-header bg-primary text-white fw-bold">4-Week Quality Audit</div>
+                                <div class="card-body">
+                                    {% if p.file_locked == 0 and p.status == 'Discharged' %}
+                                    <form action="{{ url_for('log_pipeline_call') }}" method="POST">
+                                        {{ csrf_field() }}
+                                        <input type="hidden" name="chart_number" value="{{ p.chart_number }}">
+                                        <input type="hidden" name="call_type" value="4w">
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-bold">Reachable via Phone?</label>
+                                            <select name="reachable" id="reach4w" class="form-select form-select-sm" onchange="toggleReachabilityFields('4w')" required>
+                                                <option value="">-- Choose State --</option>
+                                                <option value="Yes">Yes, Reachable</option>
+                                                <option value="No">No, Unreachable</option>
+                                            </select>
+                                        </div>
+                                        <div id="form_4w_reachable" class="d-none border p-2 rounded bg-white my-2">
+                                            <div class="mb-2"><label class="small">General Status Evaluation 4W</label><input type="text" name="general_condition_4w" class="form-control form-control-sm"></div>
+                                            <div class="mb-2"><label class="small">Service Complaints</label><textarea name="service_complaints" class="form-control form-control-sm" rows="1"></textarea></div>
+                                            <div class="mb-2"><label class="small">Physician Opinion</label><input type="text" name="physician_opinion" class="form-control form-control-sm"></div>
+                                            <div class="mb-2"><label class="small">Nursing Opinion</label><input type="text" name="nursing_opinion" class="form-control form-control-sm"></div>
+                                            <div class="mb-2"><label class="small">Price Worthiness</label><input type="text" name="price_worthiness" class="form-control form-control-sm"></div>
+                                            <div class="mb-2">
+                                                <label class="small">Surgical Site Infection Markers</label>
+                                                <select name="ssi_surveillance_4w" class="form-select form-select-sm">
+                                                    <option value="No Sign of Infection">No Sign of Infection</option>
+                                                    <option value="Clinical Signs">Clinical Signs</option>
+                                                    <option value="Diagnosis by a Clinician">Diagnosis by a Clinician</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-2"><label class="small">Caller Signature</label><input type="text" name="caller_name_4w" class="form-control form-control-sm"></div>
+                                        </div>
+                                        <div id="form_4w_unreachable" class="d-none border p-2 rounded bg-light my-2">
+                                            <div class="mb-2">
+                                                <label class="small fw-bold text-danger">Cause For Failure</label>
+                                                <select name="unreachable_reason" id="reason4w" class="form-select form-select-sm" onchange="toggleOtherReason('4w')">
+                                                    <option value="Phone not working/Switched off">Phone not working/Switched off</option>
+                                                    <option value="Patient or attendant not available">Patient or attendant not available</option>
+                                                    <option value="Language barrier Structural issue">Language barrier Structural issue</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div id="other_4w_div" class="mb-2 d-none"><label class="small">Details</label><input type="text" name="unreachable_reason_other" class="form-control form-control-sm"></div>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">Finalize Audit & Lock File</button>
+                                    </form>
+                                    {% endif %}
+                                    <div class="mt-2 p-2 bg-light rounded small">
+                                        <strong>State:</strong> {{ p.call_4w_state }} | Retry: <code>{{ p.call_4w_retry_date or 'None' }}</code><br>
+                                        SSI Marker 4W: <strong>{{ p.ssi_surveillance_4w }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-dark text-center py-2 border fw-bold">⚠️ NOTICE: Follow-up calls disabled for deceased patient record.</div>
+                    {% endif %}
+
+                    <div class="row bg-light p-3 rounded border mx-0 mt-2 small">
+                        <div class="col-md-4">
+                            <h6 class="fw-bold text-secondary">Admission Checklist</h6>
+                            <div>Diagnosis: <strong>{{ p.diagnosis }}</strong></div>
+                            <div>Officer: {{ p.admission_officer }}</div>
+                            <div>Date: <code>{{ p.date_admission }}</code></div>
+                        </div>
+                        <div class="col-md-4 border-start border-end">
+                            <h6 class="fw-bold text-secondary">Discharge Summary</h6>
+                            <div>Discharge Date: <code>{{ p.date_discharge or 'Admitted' }}</code></div>
+                            <div>Procedure Done: {{ p.procedure_done or 'None' }}</div>
+                            <div>Operation Note Complete: <strong>{{ p.op_note_complete }}</strong></div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="fw-bold text-secondary">Biopsy Matrix</h6>
+                            <div>Biopsy Status: <strong>{{ p.biopsy_status }}</strong></div>
+                            <div>Biopsy Due Date: <code>{{ p.biopsy_appointment_date or 'N/A' }}</code></div>
+                            <div>Delay Reason: <span class="text-danger fw-bold">{{ p.biopsy_delay_reason or 'None' }}</span></div>
+                            <div class="bg-white p-1 border rounded mt-1">Result: {{ p.biopsy_final_result }}</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="capacityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('update_hospital_capacities') }}" method="POST" class="modal-content">
+            {{ csrf_field() }}
+            <div class="modal-header bg-primary text-white"><h5>Bed Configuration</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="form-label fw-bold">ER Beds Limit</label><input type="number" name="total_er_beds" class="form-control" min="0" max="10000" required value="{{ totals.er_max if totals else 10 }}"></div>
+                <div class="mb-3"><label class="form-label fw-bold">ICU Beds Limit</label><input type="number" name="total_icu_beds" class="form-control" min="0" max="10000" required value="{{ totals.icu_max if totals else 6 }}"></div>
+                <div class="mb-3"><label class="form-label fw-bold">Ward Beds Capacity</label><input type="number" name="total_ward_beds" class="form-control" min="0" max="10000" required value="{{ totals.ward_max if totals else 26 }}"></div>
+                <div class="mb-3"><label class="form-label fw-bold">Day Care Surgery Unit Beds Capacity</label><input type="number" name="total_daycare_beds" class="form-control" min="0" max="10000" required value="{{ totals.daycare_max if totals else 10 }}"></div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary">Save Changes</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="admissionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="{{ url_for('admit') }}" method="POST" class="modal-content">
+            {{ csrf_field() }}
+            <div class="modal-header bg-primary text-white"><h5>Patient Admission / Waiting File</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body row g-3">
+                <div class="col-md-6"><label class="form-label fw-bold">Chart Number</label><input type="text" name="chart_number" class="form-control" required></div>
+                <div class="col-md-6"><label class="form-label fw-bold">Full Patient Name</label><input type="text" name="full_name" class="form-control" required></div>
+                <div class="col-md-6"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control"></div>
+                <div class="col-md-3">
+                    <label class="form-label">Gender</label>
+                    <select name="gender" class="form-select"><option value="Male">Male</option><option value="Female">Female</option></select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Admission Type</label>
+                    <select name="admission_type" class="form-select"><option value="Elective">Elective</option><option value="Emergency">Emergency</option></select>
+                </div>
+                <div class="col-md-6"><label class="form-label">Surgeon</label><input type="text" name="surgeon_name" class="form-control"></div>
+                <div class="col-md-6"><label class="form-label">Diagnosis</label><input type="text" name="diagnosis" class="form-control"></div>
+                <div class="col-md-6"><label class="form-label">Admission Date</label><input type="date" name="date_admission" class="form-control" value="{{ today_str }}" required></div>
+                <div class="col-md-6"><label class="form-label">Admission Officer</label><input type="text" name="admission_officer" class="form-control" required></div>
+                
+                <div class="col-12 bg-light p-2 rounded border">
+                    <h6>Admission Destination Allocation</h6>
+                    <select name="disposition_unit" id="unitSelectionField" class="form-select" onchange="evaluateSubUnitDisplay()" required>
+                        <option value="Ward">Ward</option>
+                        <option value="ER">ER (Emergency Room)</option>
+                        <option value="Day Care Surgery Unit">Day Care Surgery Unit</option>
+                        <option value="ICU">ICU</option>
+                        <option value="Waiting List">Place on System Waiting List</option>
+                    </select>
+                </div>
+
+                <!-- Interactive JavaScript Injection Sub-option Module for ICU 1 and ICU 2 selection -->
+                <div class="col-12 d-none" id="icuSuboptionsModule">
+                    <label class="form-label fw-bold text-primary">Specify Targeted ICU Room Block Location</label>
+                    <select id="icuSubSelectionTarget" class="form-select">
+                        <option value="ICU 1">ICU 1</option>
+                        <option value="ICU 2">ICU 2</option>
+                    </select>
+                </div>
+
+                <div class="col-12"><small class="text-muted fw-bold">Pre-Op Clinical Entry Checklist:</small></div>
+                <div class="col-md-3"><div class="form-check"><input type="checkbox" name="history_done" value="Yes" class="form-check-input"><label class="form-check-label">History Compiled</label></div></div>
+                <div class="col-md-3"><div class="form-check"><input type="checkbox" name="pe_done" value="Yes" class="form-check-input"><label class="form-check-label">P/E Evaluated</label></div></div>
+                <div class="col-md-3"><div class="form-check"><input type="checkbox" name="ix_done" value="Yes" class="form-check-input"><label class="form-check-label">Ix Investigations Run</label></div></div>
+                <div class="col-md-3"><div class="form-check"><input type="checkbox" name="pre_anesthesia_done" value="Yes" class="form-check-input"><label class="form-check-label">Pre-Anesthesia Clear</label></div></div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary" onclick="prepareSubmissionParameters(event, this.form)">Save Admission</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="dischargeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="{{ url_for('discharge') }}" method="POST" class="modal-content">
+            {{ csrf_field() }}
+            <div class="modal-header bg-primary text-white"><h5>Compile Discharge</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body row g-3">
+                <input type="hidden" name="discharge_chart_number" id="discharge_chart_hidden">
+                <div class="col-md-12">
+                    <label class="form-label fw-bold">Status Variant</label>
+                    <select name="discharge_status_selector" id="statusSelector" class="form-select bg-light fw-bold" onchange="toggleLostToFollowupReasonBox()" required>
+                        <option value="Discharged">Discharge Complete</option>
+                        <option value="Lost to Follow-up">Patient Lost to Follow-Up</option>
+                    </select>
+                </div>
+                <div id="lost_reason_wrapper" class="col-md-12 d-none">
+                    <label class="form-label text-danger fw-bold">Reason for Follow-Up Loss</label>
+                    <input type="text" name="lost_to_followup_reason" class="form-control">
+                </div>
+                <hr class="my-1">
+                
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Discharge Status</label>
+                    <select name="discharge_status" class="form-select" required>
+                        <option value="Improved">Improved</option>
+                        <option value="Same">Same</option>
+                        <option value="LAMA">LAMA</option>
+                        <option value="Down referral">Down referral</option>
+                        <option value="Up referral">Up referral</option>
+                        <option value="Deteriorated">Deteriorated</option>
+                        <option value="Death">Death</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 align-self-center">
+                    <div class="form-check form-switch bg-light border p-2 rounded shadow-sm text-center">
+                        <input class="form-check-input float-none me-2" type="checkbox" id="highRiskSsiToggle" name="high_risk_ssi" value="1">
+                        <label class="form-check-label text-danger fw-bold" for="highRiskSsiToggle">🚨 HIGH-RISK SSI MARKER</label>
+                    </div>
+                </div>
+
+                <div class="col-md-6"><label class="form-label">Discharge Date</label><input type="date" name="date_discharge" class="form-control" value="{{ today_str }}" required></div>
+                <div class="col-md-6"><label class="form-label">Procedure Done</label><input type="text" name="procedure_done" class="form-control" required></div>
+                <div class="col-md-6">
+                    <label class="form-label">Operation Note Complete</label>
+                    <select name="op_note_complete" class="form-select"><option value="No">No</option><option value="Yes">Yes</option></select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Biopsy Status</label>
+                    <select name="biopsy_status" class="form-select"><option value="No">No Biopsy Indicated</option><option value="Yes">Yes, Sent to Lab</option><option value="Pending">Pending</option></select>
+                </div>
+                <div class="col-md-6"><label class="form-label">Biopsy Due Date</label><input type="date" name="biopsy_appointment_date" class="form-control"></div>
+                <div class="col-md-6"><label class="form-label">Return Date</label><input type="date" name="appointment_date" class="form-control"></div>
+                <div class="col-md-12"><label class="form-label">Discharge Officer</label><input type="text" name="discharge_officer" class="form-control" required></div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary">Finalize Discharge</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="biopsyUpdateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('update_biopsy_result') }}" method="POST" class="modal-content">
+            {{ csrf_field() }}
+            <div class="modal-header bg-primary text-white"><h5>Biopsy Matrix</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <input type="hidden" name="biopsy_chart_number" id="biopsy_chart_hidden">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Biopsy Status</label>
+                    <select name="biopsy_status" id="biopsy_status_select_modal" class="form-select" onchange="toggleBiopsyDelayReasonField()" required>
+                        <option value="Yes">Active Lab Pending Queue</option>
+                        <option value="Delayed">DELAYED / OVERDUE</option>
+                        <option value="No">No Biopsy Indicated</option>
+                    </select>
+                </div>
+                <div id="biopsy_delay_reason_wrapper" class="mb-3 d-none border border-danger p-2 rounded bg-light">
+                    <label class="form-label text-danger fw-bold">Delay Reason</label>
+                    <input type="text" name="biopsy_delay_reason" class="form-control" placeholder="Provide details regarding delay...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Biopsy Result</label>
+                    <textarea name="biopsy_final_result" class="form-control" rows="3" required>Pending Lab Review</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Biopsy Collected?</label>
+                    <select name="biopsy_result_received" class="form-select"><option value="No">No</option><option value="Yes">Yes</option></select>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary">Save Changes</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="allocationAdmissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('admit') }}" method="POST" class="modal-content">
+            {{ csrf_field() }}
+            <div class="modal-header bg-success text-white"><h5>Allocate Space & Admit</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="alert alert-info">Admitting Patient: <strong id="alloc_name_span"></strong></div>
+                <input type="hidden" name="chart_number" id="alloc_chart_hidden">
+                <input type="hidden" name="full_name" id="alloc_name_hidden">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Select Service Unit</label>
+                    <select name="disposition_unit" class="form-select" required>
+                        <option value="Ward">Ward</option>
+                        <option value="ICU 1">ICU 1</option>
+                        <option value="ICU 2">ICU 2</option>
+                        <option value="ER">ER Space</option>
+                        <option value="Day Care Surgery Unit">Day Care Surgery Unit</option>
+                    </select>
+                </div>
+                <div class="mb-3"><label class="form-label small fw-bold">Admission Date</label><input type="date" name="date_admission" class="form-control form-control-sm" value="{{ today_str }}" required></div>
+                <div class="mb-3"><label class="form-label small fw-bold">Admission Officer</label><input type="text" name="admission_officer" class="form-control form-control-sm" required></div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-success">Admit Patient</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="waitingLeaveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('leave_waiting_list') }}" method="POST" class="modal-content">
+            {{ csrf_field() }}
+            <div class="modal-header bg-dark text-white"><h5>Log Exit Reason</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <input type="hidden" name="chart_number" id="waiting_leave_chart_hidden">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Reason for Leaving</label>
+                    <select name="waiting_list_leave_reason" id="waitLeaveSelect" class="form-select" onchange="toggleWaitingOtherReasonField()" required>
+                        <option value="Went to other hospital">Went to other hospital</option>
+                        <option value="Will come back">Will come back later</option>
+                        <option value="Financial reason structural issue">Financial reason structural issue</option>
+                        <option value="Dissatisfied with lack of bed space asset availability">Dissatisfied with lack of bed space availability</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div id="waiting_leave_other_wrapper" class="mb-3 d-none border p-2 rounded bg-light">
+                    <label class="form-label small fw-bold text-danger">Details</label>
+                    <input type="text" name="waiting_list_leave_reason_other" class="form-control form-control-sm">
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-danger">Log Exit</button></div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function launchDischargeModal(chartNum) { document.getElementById('discharge_chart_hidden').value = chartNum; }
+    function populateBiopsyModal(chartNum, currentStatus) {
+        document.getElementById('biopsy_chart_hidden').value = chartNum;
+        document.getElementById('biopsy_status_select_modal').value = currentStatus;
+        toggleBiopsyDelayReasonField();
+    }
+    function triggerWaitingAllocationModal(chartNum, fullName) {
+        document.getElementById('alloc_chart_hidden').value = chartNum;
+        document.getElementById('alloc_name_hidden').value = fullName;
+        document.getElementById('alloc_name_span').innerText = fullName + " (" + chartNum + ")";
+    }
+    function triggerWaitingLeaveModal(chartNum) { document.getElementById('waiting_leave_chart_hidden').value = chartNum; }
+    
+    // Smooth tab shifting targeting the requested Follow-Up lists element layout
+    function switchToFollowUpTab() {
+        var triggerEl = document.querySelector('#dashboardTabs button[data-bs-target="#followups-pane"]');
+        if(triggerEl) { bootstrap.Tab.getInstance(triggerEl || new bootstrap.Tab(triggerEl)).show(); }
+    }
+    
+    // Evaluation check managing dynamic selection blocks on the new admission form
+    function evaluateSubUnitDisplay() {
+        var choice = document.getElementById('unitSelectionField').value;
+        var subModule = document.getElementById('icuSuboptionsModule');
+        if(choice === 'ICU') { subModule.classList.remove('d-none'); }
+        else { subModule.classList.add('d-none'); }
+    }
+    
+    function prepareSubmissionParameters(event, formElement) {
+        var choice = document.getElementById('unitSelectionField').value;
+        if(choice === 'ICU') {
+            event.preventDefault();
+            var targetValue = document.getElementById('icuSubSelectionTarget').value;
+            document.getElementById('unitSelectionField').innerHTML += `<option value="${targetValue}" selected>${targetValue}</option>`;
+            document.getElementById('unitSelectionField').value = targetValue;
+            formElement.submit();
+        }
+    }
+    
+    function toggleLostToFollowupReasonBox() {
+        var sel = document.getElementById('statusSelector').value;
+        var wrapper = document.getElementById('lost_reason_wrapper');
+        if(sel === 'Lost to Follow-up') { wrapper.classList.remove('d-none'); }
+        else { wrapper.classList.add('d-none'); }
+    }
+    function toggleBiopsyDelayReasonField() {
+        var sel = document.getElementById('biopsy_status_select_modal').value;
+        var wrapper = document.getElementById('biopsy_delay_reason_wrapper');
+        if(sel === 'Delayed') { wrapper.classList.remove('d-none'); }
+        else { wrapper.classList.add('d-none'); }
+    }
+    function toggleWaitingOtherReasonField() {
+        var sel = document.getElementById('waitLeaveSelect').value;
+        var wrapper = document.getElementById('waiting_leave_other_wrapper');
+        if(sel === 'Other') { wrapper.classList.remove('d-none'); }
+        else { wrapper.classList.add('d-none'); }
+    }
+    function toggleReachabilityFields(prefix) {
+        var state = document.getElementById('reach' + prefix).value;
+        var reachDiv = document.getElementById('form_' + prefix + '_reachable');
+        var unreachDiv = document.getElementById('form_' + prefix + '_unreachable');
+        if (state === 'Yes') { reachDiv.classList.remove('d-none'); unreachDiv.classList.add('d-none'); }
+        else if (state === 'No') { reachDiv.classList.add('d-none'); unreachDiv.classList.remove('d-none'); toggleOtherReason(prefix); }
+        else { reachDiv.classList.add('d-none'); unreachDiv.classList.add('d-none'); }
+    }
+    function toggleOtherReason(prefix) {
+        var val = document.getElementById('reason' + prefix).value;
+        var otherDiv = document.getElementById('other_' + prefix + '_div');
+        if (val === 'Other') { otherDiv.classList.remove('d-none'); }
+        else { otherDiv.classList.add('d-none'); }
+    }
+</script>
+</body>
+</html>
